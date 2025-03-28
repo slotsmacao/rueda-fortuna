@@ -1,9 +1,9 @@
 // Segmentos de la rueda
 const segments = [
-  "CORTESIA",
+  "CORTESÍA",
   "REGALO PREMIUM",
   "SIGA PARTICIPANDO",
-  "CORTESIA",
+  "CORTESÍA",
   "REGALO PREMIUM",
   "SIGA PARTICIPANDO",
   "CORTESÍA",
@@ -21,7 +21,7 @@ const arcSize = (2 * Math.PI) / totalSegments;
 let currentRotation = 0; // Rotación en radianes
 let spinTimeout = null;
 let spinAngle = 0; // Velocidad de giro
-let spinAngleIncrement = 0; // Incremento que se aplicará cada frame
+let spinAngleIncrement = 0; // Desaceleración
 let isSpinning = false;
 
 // Dibujar la rueda inicialmente
@@ -33,9 +33,9 @@ spinButton.addEventListener("click", function() {
   isSpinning = true;
   resultMessage.textContent = "";
 
-  // Velocidad inicial de la ruleta (entre 10 y 15)
+  // Velocidad inicial aleatoria entre 10 y 15 grados por frame (ajusta según necesites)
   spinAngle = Math.floor(Math.random() * 6) + 10;
-  spinAngleIncrement = 0.2; // Desaceleración
+  spinAngleIncrement = 0.2; // Controla la desaceleración
   rotateWheel();
 });
 
@@ -47,13 +47,12 @@ function drawWheel() {
   // Limpiar canvas
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Dibujar segmentos
+  // Dibujar cada segmento de la rueda
   for (let i = 0; i < totalSegments; i++) {
-    // Inicio y fin del arco
     const startAngle = currentRotation + i * arcSize;
     const endAngle = startAngle + arcSize;
 
-    // Colores alternos (puedes personalizarlos)
+    // Establecer colores para cada sector
     ctx.fillStyle = getSegmentColor(i);
 
     // Dibujar sector
@@ -63,20 +62,26 @@ function drawWheel() {
     ctx.closePath();
     ctx.fill();
 
-    // Dibujar texto
+    // Dibujar el texto dentro del sector
     ctx.save();
-    ctx.fillStyle = "#fff"; // color del texto
-    ctx.font = "10px Arial";
-    ctx.translate(
-      centerX + Math.cos(startAngle + arcSize / 2) * (radius * 0.50),
-      centerY + Math.sin(startAngle + arcSize / 2) * (radius * 0.50)
-    );
-    ctx.rotate(startAngle + arcSize / 2 + Math.PI / 2);
-    ctx.fillText(segments[i], -ctx.measureText(segments[i]).width / 2, 0);
+    ctx.fillStyle = "#fff"; // Color del texto
+    ctx.font = "10px Arial"; // Tamaño de fuente reducido para ajustarlo
+
+    // Ajustar la posición del texto (más cerca del centro para evitar que se salga)
+    const textRadius = radius * 0.55;
+    const textAngle = startAngle + arcSize / 2;
+    const textX = centerX + Math.cos(textAngle) * textRadius;
+    const textY = centerY + Math.sin(textAngle) * textRadius;
+
+    ctx.translate(textX, textY);
+    // Rotar el texto para que quede alineado verticalmente
+    ctx.rotate(textAngle + Math.PI / 2);
+    ctx.textAlign = "center";
+    ctx.fillText(segments[i], 0, 0);
     ctx.restore();
   }
 
-  // Opcional: dibujar un círculo en el centro
+  // Dibujar un círculo en el centro (opcional)
   ctx.beginPath();
   ctx.arc(centerX, centerY, radius * 0.2, 0, 2 * Math.PI);
   ctx.fillStyle = "#222";
@@ -84,11 +89,11 @@ function drawWheel() {
 }
 
 function rotateWheel() {
-  // Aplicar velocidad
+  // Incrementa la rotación en función de la velocidad actual (convertida a radianes)
   currentRotation += (spinAngle * Math.PI) / 180;
   drawWheel();
 
-  // Desacelerar
+  // Disminuye la velocidad de giro
   spinAngle -= spinAngleIncrement;
   if (spinAngle <= 0) {
     spinAngle = 0;
@@ -103,20 +108,25 @@ function stopRotateWheel() {
   spinTimeout = null;
   isSpinning = false;
 
-  // Determinar índice ganador
-  const degrees = (currentRotation * 180) / Math.PI; // rotación en grados
-  const normalizedDegrees = degrees % 360; // 0-359
-  const segmentIndex = Math.floor(
-    totalSegments - (normalizedDegrees / 360) * totalSegments
-  ) % totalSegments;
+  // Para que la flecha (en la parte superior) determine el premio correcto,
+  // aplicamos un offset de 90° (porque 0° está a la derecha en el canvas)
+  const offset = 90; // grados
+  const degrees = ((currentRotation * 180) / Math.PI + offset) % 360;
+  const segmentSize = 360 / totalSegments;
+
+  // Calculamos el índice según el ángulo final
+  let rawIndex = Math.floor(degrees / segmentSize);
+  
+  // Dependiendo del orden en que se dibujen los segmentos, invertimos el índice
+  rawIndex = totalSegments - 1 - rawIndex;
+  const segmentIndex = ((rawIndex % totalSegments) + totalSegments) % totalSegments;
 
   const selectedSegment = segments[segmentIndex];
   resultMessage.textContent = `¡Felicidades! Obtuviste: ${selectedSegment}`;
 }
 
-// Función para obtener un color distinto por segmento
+// Función para obtener un color diferente para cada segmento (alternando colores)
 function getSegmentColor(index) {
-  // Ejemplo de colores alternos
   const colors = ["#d35400", "#c0392b", "#16a085", "#2980b9", "#8e44ad"];
   return colors[index % colors.length];
 }

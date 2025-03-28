@@ -66,10 +66,10 @@ function drawWheel() {
     // Dibujar texto
     ctx.save();
     ctx.fillStyle = "#fff"; // color del texto
-    ctx.font = "12px Arial";
+    ctx.font = "10px Arial";
     ctx.translate(
-      centerX + Math.cos(startAngle + arcSize / 2) * (radius * 0.55),
-      centerY + Math.sin(startAngle + arcSize / 2) * (radius * 0.55)
+      centerX + Math.cos(startAngle + arcSize / 2) * (radius * 0.50),
+      centerY + Math.sin(startAngle + arcSize / 2) * (radius * 0.50)
     );
     ctx.rotate(startAngle + arcSize / 2 + Math.PI / 2);
     ctx.fillText(segments[i], -ctx.measureText(segments[i]).width / 2, 0);

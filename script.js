@@ -1,41 +1,51 @@
-// Segmentos de la rueda
+// Segmentos de la rueda (con \n para forzar dos líneas en algunos)
 const segments = [
   "CORTESÍA",
-  "REGALO PREMIUM",
-  "SIGA PARTICIPANDO",
+  "REGALO\nPREMIUM",
+  "SIGA\nPARTICIPANDO",
   "CORTESÍA",
-  "REGALO PREMIUM",
-  "SIGA PARTICIPANDO",
+  "REGALO\nPREMIUM",
+  "SIGA\nPARTICIPANDO",
   "CORTESÍA",
-  "REGALO PREMIUM"
+  "REGALO\nPREMIUM"
 ];
 
+// Variables principales
 const canvas = document.getElementById("wheelCanvas");
 const ctx = canvas.getContext("2d");
 const spinButton = document.getElementById("spinButton");
 const resultMessage = document.getElementById("resultMessage");
 
 const totalSegments = segments.length;
+// Cada sector abarca este ángulo en radianes
 const arcSize = (2 * Math.PI) / totalSegments;
-let currentRotation = 0; 
+
+let currentRotation = 0;       // Rotación acumulada en radianes
 let spinTimeout = null;
-let spinAngle = 0; 
-let spinAngleIncrement = 0; 
+let spinAngle = 0;            // Velocidad de giro en grados/frame
+let spinAngleIncrement = 0;   // Desaceleración
 let isSpinning = false;
 
-// Dibujar la rueda inicialmente
+// Dibujamos la rueda por primera vez
 drawWheel();
 
+// Botón de girar
 spinButton.addEventListener("click", function() {
-  if (isSpinning) return;
+  if (isSpinning) return; // Evita múltiples clics mientras gira
+
   isSpinning = true;
   resultMessage.textContent = "";
 
-  spinAngle = Math.floor(Math.random() * 6) + 10; // velocidad inicial aleatoria
-  spinAngleIncrement = 0.2; // desaceleración
+  // Velocidad inicial aleatoria (entre 10 y 15 grados/frame)
+  spinAngle = Math.floor(Math.random() * 6) + 10;
+  spinAngleIncrement = 0.2; // Ajusta para más o menos desaceleración
+
   rotateWheel();
 });
 
+/**
+ * Dibuja la rueda en el canvas
+ */
 function drawWheel() {
   const centerX = canvas.width / 2;
   const centerY = canvas.height / 2;
@@ -44,51 +54,56 @@ function drawWheel() {
   // Limpiar el canvas
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Dibujar cada segmento
+  // Dibujar cada sector
   for (let i = 0; i < totalSegments; i++) {
-    // Ángulos de inicio y fin para el sector i
+    // Ángulo de inicio y fin para este sector
     const startAngle = currentRotation + i * arcSize;
     const endAngle = startAngle + arcSize;
 
     // Color de fondo del sector
     ctx.fillStyle = getSegmentColor(i);
 
-    // Dibujar el sector
+    // Dibuja el sector
     ctx.beginPath();
     ctx.moveTo(centerX, centerY);
     ctx.arc(centerX, centerY, radius, startAngle, endAngle, false);
     ctx.closePath();
     ctx.fill();
 
-    // --------- DIBUJAR TEXTO RADIALMENTE AL BORDE ----------
-    // Ángulo central del sector
-    const textAngle = startAngle + arcSize / 2;
-    // Radio donde se ubicará el texto (cerca del borde, un poco hacia adentro)
-    const textRadius = radius * 0.8;
+    // === DIBUJAR TEXTO RADIAL CON LÍNEAS MÚLTIPLES ===
+    const textAngle = startAngle + arcSize / 2; // Ángulo central del sector
+    const textRadius = radius * 0.8;            // Distancia desde el centro al texto
 
     ctx.save();
-    // Trasladamos el origen de coordenadas al centro de la rueda
+    // Trasladar origen al centro
     ctx.translate(centerX, centerY);
-    // Giramos el canvas hasta el ángulo central del sector
+    // Rotar hasta el ángulo medio del sector
     ctx.rotate(textAngle);
-    // Desplazamos el texto hacia la posición en el borde
+    // Trasladar el texto cerca del borde
     ctx.translate(textRadius, 0);
 
-    // Configurar estilo de texto
+    // Ajustes de texto
     ctx.font = "14px Arial";
     ctx.fillStyle = "#fff";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
 
-    // Girar el texto para que quede radialmente hacia afuera.
-    // -90° (en radianes, -Math.PI/2) hace que el texto apunte "hacia afuera".
+    // Girar el texto para que apunte hacia afuera
     ctx.rotate(-Math.PI / 2);
 
-    // Escribir el texto
-    ctx.fillText(segments[i], 0, 0);
+    // Dividir el texto en caso de que haya \n
+    const lines = segments[i].split("\n");
+    const lineHeight = 16; // separación vertical entre líneas
+
+    // Calcular y dibujar cada línea centrada verticalmente
+    const totalLines = lines.length;
+    for (let lineIndex = 0; lineIndex < totalLines; lineIndex++) {
+      // Centrar verticalmente
+      const yPos = (lineIndex - (totalLines - 1) / 2) * lineHeight;
+      ctx.fillText(lines[lineIndex], 0, yPos);
+    }
 
     ctx.restore();
-    // -------------------------------------------------------
   }
 
   // (Opcional) Círculo en el centro
@@ -98,10 +113,15 @@ function drawWheel() {
   ctx.fill();
 }
 
+/**
+ * Inicia la animación de giro
+ */
 function rotateWheel() {
+  // Convertir velocidad a radianes/frame
   currentRotation += (spinAngle * Math.PI) / 180;
   drawWheel();
 
+  // Desacelerar
   spinAngle -= spinAngleIncrement;
   if (spinAngle <= 0) {
     spinAngle = 0;
@@ -111,26 +131,37 @@ function rotateWheel() {
   }
 }
 
+/**
+ * Lógica para determinar el premio cuando se detiene
+ */
 function stopRotateWheel() {
   cancelAnimationFrame(spinTimeout);
   spinTimeout = null;
   isSpinning = false;
 
-  // Ajustar para que "arriba" sea el premio
-  const offset = 90; 
+  // Ajuste para que "arriba" sea 0°, ya que en Canvas 0° está a la derecha
+  const offset = 90; // Prueba 90, -90 o 270 según necesites
   const degrees = ((currentRotation * 180) / Math.PI + offset) % 360;
   const segmentSize = 360 / totalSegments;
 
+  // Índice calculado en base a los grados
   let rawIndex = Math.floor(degrees / segmentSize);
-  // Invertir si fuera necesario (depende del orden)
+
+  // Invertir si el orden está al revés
+  // Prueba con o sin esta línea si no coincide el premio
   rawIndex = totalSegments - 1 - rawIndex;
+
+  // Ajustar a rango válido
   const segmentIndex = ((rawIndex % totalSegments) + totalSegments) % totalSegments;
 
+  // Mostrar premio
   const selectedSegment = segments[segmentIndex];
   resultMessage.textContent = `¡Felicidades! Obtuviste: ${selectedSegment}`;
 }
 
-// Colores para los sectores
+/**
+ * Asigna colores a los sectores de forma alternada
+ */
 function getSegmentColor(index) {
   const colors = ["#d35400", "#c0392b", "#16a085", "#2980b9", "#8e44ad"];
   return colors[index % colors.length];

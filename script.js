@@ -1,13 +1,13 @@
 // Segmentos de la rueda
 const segments = [
-  "CORTESÍA",
-  "REGALO SORPRESA",
+  "CORTESIA",
+  "REGALO PREMIUM",
+  "SIGA PARTICIPANDO",
+  "CORTESIA",
+  "REGALO PREMIUM",
   "SIGA PARTICIPANDO",
   "CORTESÍA",
-  "REGALO SORPRESA",
-  "SIGA PARTICIPANDO",
-  "CORTESÍA",
-  "REGALO SORPRESA"
+  "REGALO PREMIUM"
 ];
 
 // Variables para dibujar y rotar la rueda

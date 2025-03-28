@@ -37,7 +37,7 @@ spinButton.addEventListener("click", function() {
   resultMessage.textContent = "";
 
   // Velocidad inicial aleatoria (entre 10 y 15 grados/frame)
-  spinAngle = Math.floor(Math.random() * 6) + 10;
+  spinAngle = Math.floor(Math.random() * 10) + 20;
   spinAngleIncrement = 0.2; // Ajusta para más o menos desaceleración
 
   rotateWheel();

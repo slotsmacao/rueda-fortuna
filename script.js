@@ -10,7 +10,6 @@ const segments = [
   "REGALO PREMIUM"
 ];
 
-// Variables para dibujar y rotar la rueda
 const canvas = document.getElementById("wheelCanvas");
 const ctx = canvas.getContext("2d");
 const spinButton = document.getElementById("spinButton");
@@ -18,24 +17,22 @@ const resultMessage = document.getElementById("resultMessage");
 
 const totalSegments = segments.length;
 const arcSize = (2 * Math.PI) / totalSegments;
-let currentRotation = 0; // Rotación en radianes
+let currentRotation = 0; 
 let spinTimeout = null;
-let spinAngle = 0; // Velocidad de giro
-let spinAngleIncrement = 0; // Desaceleración
+let spinAngle = 0; 
+let spinAngleIncrement = 0; 
 let isSpinning = false;
 
 // Dibujar la rueda inicialmente
 drawWheel();
 
 spinButton.addEventListener("click", function() {
-  if (isSpinning) return; // evitar múltiples clics mientras gira
-
+  if (isSpinning) return;
   isSpinning = true;
   resultMessage.textContent = "";
 
-  // Velocidad inicial aleatoria entre 10 y 15 grados por frame (ajusta según necesites)
-  spinAngle = Math.floor(Math.random() * 6) + 10;
-  spinAngleIncrement = 0.2; // Controla la desaceleración
+  spinAngle = Math.floor(Math.random() * 6) + 10; // velocidad inicial aleatoria
+  spinAngleIncrement = 0.2; // desaceleración
   rotateWheel();
 });
 
@@ -44,44 +41,57 @@ function drawWheel() {
   const centerY = canvas.height / 2;
   const radius = Math.min(centerX, centerY);
 
-  // Limpiar canvas
+  // Limpiar el canvas
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Dibujar cada segmento de la rueda
+  // Dibujar cada segmento
   for (let i = 0; i < totalSegments; i++) {
+    // Ángulos de inicio y fin para el sector i
     const startAngle = currentRotation + i * arcSize;
     const endAngle = startAngle + arcSize;
 
-    // Establecer colores para cada sector
+    // Color de fondo del sector
     ctx.fillStyle = getSegmentColor(i);
 
-    // Dibujar sector
+    // Dibujar el sector
     ctx.beginPath();
     ctx.moveTo(centerX, centerY);
     ctx.arc(centerX, centerY, radius, startAngle, endAngle, false);
     ctx.closePath();
     ctx.fill();
 
-    // Dibujar el texto dentro del sector
-    ctx.save();
-    ctx.fillStyle = "#fff"; // Color del texto
-    ctx.font = "10px Arial"; // Tamaño de fuente reducido para ajustarlo
-
-    // Ajustar la posición del texto (más cerca del centro para evitar que se salga)
-    const textRadius = radius * 0.55;
+    // --------- DIBUJAR TEXTO RADIALMENTE AL BORDE ----------
+    // Ángulo central del sector
     const textAngle = startAngle + arcSize / 2;
-    const textX = centerX + Math.cos(textAngle) * textRadius;
-    const textY = centerY + Math.sin(textAngle) * textRadius;
+    // Radio donde se ubicará el texto (cerca del borde, un poco hacia adentro)
+    const textRadius = radius * 0.8;
 
-    ctx.translate(textX, textY);
-    // Rotar el texto para que quede alineado verticalmente
-    ctx.rotate(textAngle + Math.PI / 2);
+    ctx.save();
+    // Trasladamos el origen de coordenadas al centro de la rueda
+    ctx.translate(centerX, centerY);
+    // Giramos el canvas hasta el ángulo central del sector
+    ctx.rotate(textAngle);
+    // Desplazamos el texto hacia la posición en el borde
+    ctx.translate(textRadius, 0);
+
+    // Configurar estilo de texto
+    ctx.font = "14px Arial";
+    ctx.fillStyle = "#fff";
     ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+
+    // Girar el texto para que quede radialmente hacia afuera.
+    // -90° (en radianes, -Math.PI/2) hace que el texto apunte "hacia afuera".
+    ctx.rotate(-Math.PI / 2);
+
+    // Escribir el texto
     ctx.fillText(segments[i], 0, 0);
+
     ctx.restore();
+    // -------------------------------------------------------
   }
 
-  // Dibujar un círculo en el centro (opcional)
+  // (Opcional) Círculo en el centro
   ctx.beginPath();
   ctx.arc(centerX, centerY, radius * 0.2, 0, 2 * Math.PI);
   ctx.fillStyle = "#222";
@@ -89,11 +99,9 @@ function drawWheel() {
 }
 
 function rotateWheel() {
-  // Incrementa la rotación en función de la velocidad actual (convertida a radianes)
   currentRotation += (spinAngle * Math.PI) / 180;
   drawWheel();
 
-  // Disminuye la velocidad de giro
   spinAngle -= spinAngleIncrement;
   if (spinAngle <= 0) {
     spinAngle = 0;
@@ -108,16 +116,13 @@ function stopRotateWheel() {
   spinTimeout = null;
   isSpinning = false;
 
-  // Para que la flecha (en la parte superior) determine el premio correcto,
-  // aplicamos un offset de 90° (porque 0° está a la derecha en el canvas)
-  const offset = 90; // grados
+  // Ajustar para que "arriba" sea el premio
+  const offset = 90; 
   const degrees = ((currentRotation * 180) / Math.PI + offset) % 360;
   const segmentSize = 360 / totalSegments;
 
-  // Calculamos el índice según el ángulo final
   let rawIndex = Math.floor(degrees / segmentSize);
-  
-  // Dependiendo del orden en que se dibujen los segmentos, invertimos el índice
+  // Invertir si fuera necesario (depende del orden)
   rawIndex = totalSegments - 1 - rawIndex;
   const segmentIndex = ((rawIndex % totalSegments) + totalSegments) % totalSegments;
 
@@ -125,7 +130,7 @@ function stopRotateWheel() {
   resultMessage.textContent = `¡Felicidades! Obtuviste: ${selectedSegment}`;
 }
 
-// Función para obtener un color diferente para cada segmento (alternando colores)
+// Colores para los sectores
 function getSegmentColor(index) {
   const colors = ["#d35400", "#c0392b", "#16a085", "#2980b9", "#8e44ad"];
   return colors[index % colors.length];
